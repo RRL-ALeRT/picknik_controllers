@@ -127,7 +127,7 @@ CallbackReturn PicknikTwistController::on_deactivate(
 }
 
 controller_interface::return_type PicknikTwistController::update(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto twist_commands = rt_command_ptr_.readFromRT();
 
@@ -145,12 +145,25 @@ controller_interface::return_type PicknikTwistController::update(
       command_interfaces_.size());
     return controller_interface::return_type::ERROR;
   }
-  command_interfaces_[0].set_value((*twist_commands)->linear.x);
-  command_interfaces_[1].set_value((*twist_commands)->linear.y);
-  command_interfaces_[2].set_value((*twist_commands)->linear.z);
-  command_interfaces_[3].set_value((*twist_commands)->angular.x);
-  command_interfaces_[4].set_value((*twist_commands)->angular.y);
-  command_interfaces_[5].set_value((*twist_commands)->angular.z);
+
+  if (time - (*twist_commands)->header.stamp > rclcpp::Duration::from_seconds(0.4))
+  {
+    command_interfaces_[0].set_value(0);
+    command_interfaces_[1].set_value(0);
+    command_interfaces_[2].set_value(0);
+    command_interfaces_[3].set_value(0);
+    command_interfaces_[4].set_value(0);
+    command_interfaces_[5].set_value(0);
+
+    return controller_interface::return_type::OK;
+  }
+
+  command_interfaces_[0].set_value((*twist_commands)->twist.linear.x);
+  command_interfaces_[1].set_value((*twist_commands)->twist.linear.y);
+  command_interfaces_[2].set_value((*twist_commands)->twist.linear.z);
+  command_interfaces_[3].set_value((*twist_commands)->twist.angular.x);
+  command_interfaces_[4].set_value((*twist_commands)->twist.angular.y);
+  command_interfaces_[5].set_value((*twist_commands)->twist.angular.z);
 
   return controller_interface::return_type::OK;
 }
