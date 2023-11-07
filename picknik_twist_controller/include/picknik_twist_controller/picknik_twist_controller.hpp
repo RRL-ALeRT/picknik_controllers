@@ -30,12 +30,14 @@
 
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "picknik_twist_controller/visibility_control.h"
 #include "realtime_tools/realtime_buffer.h"
 
 namespace picknik_twist_controller
 {
 using CmdType = geometry_msgs::msg::TwistStamped;
+using GripperVelType = std_msgs::msg::Float32;
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 class PicknikTwistController : public controller_interface::ControllerInterface
@@ -72,6 +74,9 @@ protected:
 
   realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>> rt_command_ptr_;
   rclcpp::Subscription<CmdType>::SharedPtr twist_command_subscriber_;
+
+  realtime_tools::RealtimeBuffer<std::shared_ptr<GripperVelType>> rt_gripper_ptr_;
+  rclcpp::Subscription<GripperVelType>::SharedPtr twist_gripper_subscriber_;
 
   std::string logger_name_;
 };

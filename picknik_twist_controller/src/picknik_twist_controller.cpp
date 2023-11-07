@@ -106,6 +106,10 @@ CallbackReturn PicknikTwistController::on_configure(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
 
+  twist_gripper_subscriber_ = get_node()->create_subscription<GripperVelType>(
+    "~/gripper_vel", rclcpp::SystemDefaultsQoS(),
+    [this](const GripperVelType::SharedPtr msg) { rt_gripper_ptr_.writeFromNonRT(msg); });
+
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
 }
@@ -130,6 +134,7 @@ controller_interface::return_type PicknikTwistController::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto twist_commands = rt_command_ptr_.readFromRT();
+  auto gripper_command = rt_gripper_ptr_.readFromRT();
 
   // no command received yet
   if (!twist_commands || !(*twist_commands))
@@ -137,11 +142,11 @@ controller_interface::return_type PicknikTwistController::update(
     return controller_interface::return_type::OK;
   }
 
-  if (command_interfaces_.size() != 6)
+  if (command_interfaces_.size() != 7)
   {
     RCLCPP_ERROR_THROTTLE(
       get_node()->get_logger(), *get_node()->get_clock(), 1000,
-      "Twist controller needs does not match number of interfaces needed 6, given (%zu) interfaces",
+      "Twist controller needs does not match number of interfaces needed 7, given (%zu) interfaces",
       command_interfaces_.size());
     return controller_interface::return_type::ERROR;
   }
@@ -164,6 +169,16 @@ controller_interface::return_type PicknikTwistController::update(
   command_interfaces_[3].set_value((*twist_commands)->twist.angular.x);
   command_interfaces_[4].set_value((*twist_commands)->twist.angular.y);
   command_interfaces_[5].set_value((*twist_commands)->twist.angular.z);
+
+  // no gripper command received yet
+  if (!gripper_command || !(*gripper_command))
+  {
+    command_interfaces_[6].set_value(0);
+  }
+  else
+  {
+    command_interfaces_[6].set_value((*gripper_command)->data);
+  }
 
   return controller_interface::return_type::OK;
 }
